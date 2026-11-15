@@ -53,7 +53,7 @@ const AstravumStory = (() => {
 
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   function pause(ms, ...signals) {
-    if(motion.matches || signals.some(signal => signal.aborted)) return Promise.resolve();
+    if(!ms || signals.some(signal => signal.aborted)) return Promise.resolve();
     return new Promise(resolve => {
       const finish = () => {
         clearTimeout(timer);
@@ -67,9 +67,7 @@ const AstravumStory = (() => {
 
   /* `sound` is an optional { pulse(), stop() } voice. Pulses are driven by the
      reveal loop itself, so no sound can outlive the typing that produced it. */
-  function playBeats(root, line, beats, { speaker, onBeat, finish, finishOnReveal = false, speaking, sound }) {
-    const advance = root.querySelector('.story-advance');
-    const skip = root.querySelector('.story-skip');
+  function typeBeat(line, text, speaker, { speaking, sound }, finish) {
     const visual = document.createElement('span');
     const caret = document.createElement('span');
     const announcement = document.createElement('span');
@@ -79,101 +77,113 @@ const AstravumStory = (() => {
     announcement.className = 'story-sr';
     announcement.setAttribute('role', 'status');
     line.replaceChildren(visual, caret, announcement);
+    announcement.textContent = speaker?.textContent ? speaker.textContent + '. ' + text : text;
 
-    let index = 0, timer, animation, text, glyphs, start, typing, stopped = false;
-    let shown = 0, lastPulse = 0, gap = 0;
-    speaking?.(true);
-    function quiet() {
-      line.classList.remove('typing');
-      sound?.stop();
-    }
+    let timer, animation, stopped = false;
     function stop() {
-      if(stopped) return false;
+      if(stopped) return;
       stopped = true;
       clearTimeout(timer);
-      quiet();
       animation?.cancel();
-      advance.hidden = true;
-      skip.hidden = true;
-      advance.onclick = skip.onclick = null;
+      line.classList.remove('typing');
+      sound?.stop();
       speaking?.(false);
-      return true;
-    }
-    function done() {
-      if(stop()) finish();
+      finish();
     }
     function reveal() {
-      clearTimeout(timer);
-      typing = false;
-      quiet();
+      if(stopped) return;
       visual.textContent = text;
-      animation?.cancel();
-      advance.textContent = 'Continue';
-      skip.textContent = 'Skip to next';
-      if (finishOnReveal && index === beats.length - 1) done();
+      stop();
     }
-    function type() {
-      const elapsed = performance.now() - start;
-      // Allow a short silence at manual line breaks.
+
+    speaking?.(true);
+    if(motion.matches) reveal();
+    else {
+      const glyphs = Array.from(text);
       const delay = Math.min(17, 1700 / glyphs.length);
-      let count = 0, time = 0;
-      while (count < glyphs.length && time <= elapsed) {
-        time += glyphs[count] === '\n' ? 210 : delay;
-        count++;
-      }
-      if (count > shown) {
+      const start = performance.now();
+      let shown = 0, lastPulse = 0, gap = 0;
+      animation = visual.animate([{opacity:.35},{opacity:1}], {duration:240});
+      line.classList.add('typing');
+      function type() {
+        const now = performance.now(), elapsed = now - start;
+        let count = 0, time = 0;
+        while(count < glyphs.length && time <= elapsed) {
+          time += glyphs[count] === '\n' ? 210 : delay;
+          count++;
+        }
         // Spaced, slightly irregular pulses rather than one click per character.
-        const now = performance.now();
-        if (sound && /\S/.test(glyphs[count - 1]) && now - lastPulse >= gap) {
+        if(count > shown && sound && /\S/.test(glyphs[count - 1]) && now - lastPulse >= gap) {
           lastPulse = now;
           gap = 62 + Math.random() * 48;
           sound.pulse();
         }
         shown = count;
+        if(count >= glyphs.length) reveal();
+        else {
+          visual.textContent = glyphs.slice(0, count).join('');
+          timer = setTimeout(type, 25);
+        }
       }
-      if (count >= glyphs.length) reveal();
-      else {
-        visual.textContent = glyphs.slice(0, count).join('');
-        timer = setTimeout(type, 25);
-      }
-    }
-    function show() {
-      const beat = beats[index];
-      text = typeof beat === 'string' ? beat : beat.text;
-      if (speaker && typeof beat !== 'string') speaker.textContent = beat.speaker;
-      announcement.textContent = speaker?.textContent ? speaker.textContent + '. ' + text : text;
-      onBeat?.(index);
-      if (motion.matches) {
-        reveal();
-        return;
-      }
-      animation?.cancel();
-      animation = visual.animate([{opacity:.35},{opacity:1}], {duration:240});
-      glyphs = Array.from(text);
-      typing = true;
-      shown = 0;
-      lastPulse = gap = 0;
-      sound?.stop();
-      line.classList.add('typing');
-      start = performance.now();
-      advance.textContent = 'Reveal text';
-      skip.textContent = 'Skip typing';
       type();
     }
-    advance.hidden = false;
-    skip.hidden = false;
-    const step = () => {
-      if(stopped) return;
-      if (typing) reveal();
-      else if (index === beats.length - 1) done();
-      else {
-        index++;
-        show();
+    return { stop, reveal };
+  }
+
+  function playAutomatically(line, beats, { speaker, speaking, sound, finish, skip, fadeTarget = line }) {
+    const controller = new AbortController();
+    const { signal } = controller;
+    let player, fade, complete = false;
+    function hideSkip() {
+      if(!skip) return;
+      skip.hidden = true;
+      skip.onclick = null;
+    }
+    function stop() {
+      controller.abort();
+      player?.stop();
+      fade?.cancel();
+      hideSkip();
+    }
+    function done() {
+      if(complete) return;
+      complete = true;
+      hideSkip();
+      finish?.();
+    }
+    function step() {
+      if(complete || signal.aborted) return;
+      player?.reveal();
+      stop();
+      done();
+    }
+    function fadeTo(from, to) {
+      fade?.cancel();
+      if(!motion.matches){
+        fade = fadeTarget.animate([{opacity:from},{opacity:to}], {duration:900,easing:'ease-in-out',fill:'both'});
       }
-    };
-    advance.onclick = skip.onclick = step;
-    show();
-    return { stop, step };
+    }
+    if(skip){
+      skip.hidden = false;
+      skip.onclick = step;
+    }
+    const finished = (async () => {
+      for(const [i, beat] of beats.entries()){
+        if(signal.aborted) return;
+        const text = typeof beat === 'string' ? beat : beat.text;
+        if(speaker && typeof beat !== 'string') speaker.textContent = beat.speaker;
+        fadeTo(0,1);
+        await new Promise(resolve => { player = typeBeat(line, text, speaker, {speaking,sound}, resolve); });
+        // Reduced motion removes the transitions while retaining reading time.
+        await pause(Math.min(6500,Math.max(2200,1600+text.length*22)),signal);
+        if(signal.aborted) return;
+        if(skip && i === beats.length-1) break; // Keep the last line beside the manual action.
+        fadeTo(1,0);
+        await pause(motion.matches?0:1050,signal);
+      }
+      if(!signal.aborted) done();
+    })();
+    return { stop, step, finished };
   }
 
   let active;
@@ -187,10 +197,13 @@ const AstravumStory = (() => {
     const cancel = new AbortController(), skip = new AbortController();
     const signals = [cancel.signal, skip.signal];
     const shouldSkip = () => signals.some(signal => signal.aborted);
-    const pace = ms => pause(ms, ...signals);
-    let player, resolve;
+    const pace = ms => pause(motion.matches?0:ms, ...signals);
+    let player;
     active = { cancel, skip };
-    const finishDialogue = () => { player?.stop(); resolve?.(); };
+    const finishDialogue = () => {
+      content.classList.remove('visible');
+      player?.stop();
+    };
     signals.forEach(signal => signal.addEventListener('abort', finishDialogue, {once:true}));
     const jump = () => skip.abort();
     skipScene.onclick = jump;
@@ -209,19 +222,12 @@ const AstravumStory = (() => {
     async function present(segment) {
       if(!segment.length || shouldSkip()) return;
       content.classList.add('visible');
-      await new Promise(finish => {
-        resolve = finish;
-        player = playBeats(dialog, line, segment, { speaker, finish, speaking:options.speaking, sound:options.voice,
-          finishOnReveal:!!options.hold });
-        advance.focus();
-      });
-      player.stop();
-      // Optionally let the final words rest on screen before the overlay fades.
-      if(options.hold) await pace(options.hold);
-      player = resolve = null;
+      player = playAutomatically(line, segment, { speaker, speaking:options.speaking, sound:options.voice, fadeTarget:content });
+      await player.finished;
       content.classList.remove('visible');
-      skipScene.focus();
       await pace(280);
+      player.stop();
+      player = null;
     }
 
     try {
@@ -259,5 +265,5 @@ const AstravumStory = (() => {
     active.skip.abort();
     return true;
   }
-  return { SCRIPT, playBeats, cinematic, skipCinema, cancelCinema: reason => active?.cancel.abort(reason) };
+  return { SCRIPT, playAutomatically, cinematic, skipCinema, cancelCinema: reason => active?.cancel.abort(reason) };
 })();

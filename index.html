@@ -166,16 +166,9 @@ canvas{display:block}
 @keyframes pdr{from{transform:translate(0,0) rotate(-3deg)}to{transform:translate(-26px,14px) rotate(3deg)}}
 #st-end{z-index:2;transform-origin:50% 30%}
 #end-ck{position:absolute;inset:0;width:100%;height:100%;z-index:5}
-#end-txt{position:absolute;left:50%;top:13vh;transform:translateX(-50%);width:min(88vw,780px);z-index:10;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;text-shadow:0 0 18px rgba(0,0,0,.9)}
-#end-txt .il{min-height:1.4em;font:italic 300 24px/1.5 var(--sans);letter-spacing:.04em;color:#eaf3ff}
-#end-logo{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:min(290px,52vw);opacity:0;transition:opacity 2.4s,top 2.2s ease;mix-blend-mode:screen;z-index:10;max-width:none}
 #end-ship{position:absolute;left:30%;top:66%;width:14vw;transform:translate(-50%,-50%);opacity:0;max-width:none;z-index:10}
 #end-star{position:absolute;left:72%;top:36%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#fff;z-index:10;box-shadow:0 0 18px 6px rgba(190,220,255,.9),0 0 60px 18px rgba(120,170,255,.5);opacity:0;animation:tw 1.6s ease-in-out infinite alternate}
 @keyframes tw{from{transform:scale(.8)}to{transform:scale(1.5)}}
-#end-cred{position:absolute;left:0;right:0;top:56%;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;pointer-events:none;text-align:center;text-shadow:0 0 18px rgba(0,0,0,.9)}
-#end-cred .a{font:400 clamp(13px,1.5vw,20px) var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--ice2)}
-#end-cred .b{font:500 clamp(44px,7.4vw,108px)/1.05 var(--hud);letter-spacing:.14em;text-transform:uppercase;color:#d6e8ff;text-shadow:0 0 30px rgba(150,200,255,.6)}
-#end-cred .c{font:300 clamp(13px,1.6vw,22px) var(--sans);letter-spacing:.1em;color:#b6cbe8;margin-bottom:14px}#end-cred .btn{font-size:clamp(13px,1.3vw,17px);padding:16px 44px}
 #stlit{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 2.5s;background:radial-gradient(ellipse 55% 40% at 62% 52%,rgba(255,214,140,.32),transparent 70%),radial-gradient(ellipse 80% 50% at 50% 50%,rgba(150,200,255,.14),transparent 75%);mix-blend-mode:screen}
 #s-station.lit #stlit{opacity:1}#s-station.lit #stw{mix-blend-mode:screen}#s-station.lit #stw img{filter:brightness(1.06) saturate(1.1)}#s-station.lit #stw .tun{display:none}
 #mute{position:absolute;right:22px;top:20px;z-index:40;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(5,10,20,.5);cursor:pointer;display:grid;place-items:center;font-size:15px;opacity:0;transition:opacity .6s}
@@ -628,8 +621,7 @@ canvas{display:block}
       <div class="who" id="hg-who"></div>
       <div class="ls" id="hg-ls"></div>
       <div class="story-actions">
-        <button class="btn story-advance" hidden>Continue</button>
-        <button class="story-skip" hidden>Skip typing</button>
+        <button class="story-skip" hidden>Skip dialogue</button>
         <button class="story-skip" id="hg-skip-intro">Skip intro</button>
         <button class="btn" id="hg-relive" hidden>Relive my memories</button>
         <button class="story-close">Close</button>
@@ -670,7 +662,6 @@ canvas{display:block}
       <button class="hb hud" id="b-time"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span><b>Timeline</b><small id="b-time-s">The journey</small></span></button>
       <button class="hb hud" id="b-back"><svg class="ic" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 8h-3"/></svg><span><b>Back to the museum</b><small>Return to the hangar</small></span></button>
       <button class="hb hud" id="b-task" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg><span><b>Task to do</b><small id="b-task-s">Optional</small></span></button>
-      <button class="hb hud pulse" id="b-present" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 8h-3"/></svg><span><b>Back to the present</b><small>Return to 2026</small></span></button>
     </div>
   </section>
 
@@ -692,14 +683,33 @@ canvas{display:block}
       <div class="row" data-k="voy"><img src="img/voyager.png" alt="">Voyager 1 <span>| Interstellar Space (1977 – Present)</span><i id="ml-voy"></i></div>
     </div>
     <div id="map-ui">
-      <button class="hb hud" id="map-ship" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M12 3c3 2 5 5 5 9l-2 4H9l-2-4c0-4 2-7 5-9z"/><circle cx="12" cy="10" r="1.6"/></svg><span><b>Return to your ship</b><small>Complete the mission</small></span></button>
+      <button class="hb hud pulse" id="map-ship" hidden><svg class="ic" viewBox="0 0 24 24"><path d="M12 3c3 2 5 5 5 9l-2 4H9l-2-4c0-4 2-7 5-9z"/><circle cx="12" cy="10" r="1.6"/></svg><span><b>Return to your ship</b><small>Complete the mission</small></span></button>
       <button class="hb hud" id="map-again"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/></svg><span><b>Explore again</b></span></button>
-      <button class="hb hud pulse" id="map-back"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v9M9 10v9M15 10v9M19 10v9M3 21h18"/></svg><span><b>Back to the museum</b></span></button>
+      <button class="hb hud" id="map-back"><svg class="ic" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v9M9 10v9M15 10v9M19 10v9M3 21h18"/></svg><span><b>Back to the museum</b></span></button>
       <button class="hb hud" id="map-lobby"><svg class="ic" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg><span><b>Return to lobby</b></span></button>
     </div>
   </section>
 
-  <section class="scene" id="s-end"><div id="end-space"><img class="bg" src="img/bg_space.jpg" alt=""><img class="pl p1" src="img/sp_jup.png" alt=""></div><div class="stage" id="st-end"><img id="end-ck" src="img/cockpit.png" alt=""></div><div id="end-txt"></div><img id="end-logo" src="img/logo.png" alt="ASTRAVUM"><img id="end-ship" src="img/ship.png" alt=""><i id="end-star"></i><div id="end-cred"><div class="a">This project is made by</div><div class="b">Astravum</div><div class="t" id="end-tag"></div><div class="c">NASA Space Apps Challenge 2026 · Abandoned but not forgotten</div><button class="btn" id="end-again">Explore again</button></div></section>
+  <section class="scene" id="s-end">
+    <div id="end-space"><img class="bg" src="img/bg_space.jpg" alt=""><img class="pl p1" src="img/sp_jup.png" alt=""></div>
+    <div class="stage" id="st-end"><img id="end-ck" src="img/cockpit.png" alt=""></div>
+    <img id="end-ship" src="img/ship.png" alt=""><i id="end-star"></i>
+    <div id="end-title" inert>
+      <img id="end-logo" src="img/logo.png" alt="ASTRAVUM">
+      <div id="end-cred">
+        <p id="end-tag"></p>
+        <h2>Created by Team Astravum</h2>
+        <ul class="end-names">
+          <li>Joud Alguthmi</li>
+          <li>Haifa Al-Nasi</li>
+          <li>Ghaida Akbar</li>
+          <li>Malak Lafi</li>
+        </ul>
+        <p class="end-event">NASA Space Apps Challenge 2026</p>
+        <button class="btn" id="end-again">Explore again</button>
+      </div>
+    </div>
+  </section>
 
   <dialog id="cinema" aria-label="Story">
     <div class="cinema-content">
@@ -751,6 +761,14 @@ canvas{display:block}
   <button class="egb" id="task-rx">← Tasks</button><div class="tbox"><button class="x" id="task-x" aria-label="Close">✕</button><div class="tk" id="task-k"></div><h2 id="task-h"></h2><p id="task-p"></p><div id="task-game"></div><div id="task-ok"></div><div class="tskip">Use Skip to continue without the task</div></div></div>
   <button class="navb" id="nav-back" aria-label="Back">‹ Back</button><button class="navb" id="nav-skip" aria-label="Skip">Skip ›</button>
   <button id="src-link">Sources &amp; credits</button>
+  <dialog id="restore-prompt" class="glass" aria-labelledby="restore-title" aria-describedby="restore-description">
+    <h2 id="restore-title">SKIP TO MUSEUM RESTORATION?</h2>
+    <p id="restore-description">Jump to the moment all three memories have been restored and watch the museum come back to life.</p>
+    <div class="story-actions">
+      <button class="btn" type="button" id="restore-confirm">Restore museum</button>
+      <button class="btn" type="button" id="restore-cancel" autofocus>Cancel</button>
+    </div>
+  </dialog>
   <div id="flash"></div>
   <div id="tasks-list"><div class="tl"><h3>TASKS ACCOMPLISHED</h3><div class="sub">Open a task to see how you solved it, or reset it and play again.</div><div class="rows"></div><button class="btn" id="tl-x">Close</button></div></div>
   <div id="modal"><div class="box glass pn"><button class="x" id="modal-x">✕</button><h2>SOURCES &amp; CREDITS</h2>
@@ -869,7 +887,7 @@ const audio=(()=>{
   function noise(d=1.4,v=.12,f0=300,f1=3200){ if(!ctx||!on) return; const n=ctx.sampleRate*d,b=ctx.createBuffer(1,n,ctx.sampleRate),a=b.getChannelData(0); for(let i=0;i<n;i++) a[i]=Math.random()*2-1; const s=ctx.createBufferSource(); s.buffer=b; const f=ctx.createBiquadFilter(); f.type='bandpass'; f.Q.value=.8; f.frequency.setValueAtTime(f0,ctx.currentTime); f.frequency.exponentialRampToValueAtTime(f1,ctx.currentTime+d); const g=ctx.createGain(); g.gain.setValueAtTime(.0001,ctx.currentTime); g.gain.exponentialRampToValueAtTime(v,ctx.currentTime+d*.35); g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+d); s.connect(f); f.connect(g); g.connect(master); s.start(); return s; }
   return {init, setCue, duck, typer, hiss, typeStop, swell:seconds=>score?.swell(seconds), get score(){return score}, get context(){return ctx},
     blip:()=>tone(880,.18,.07,'sine'), ting:()=>{tone(1480,.55,.045,'sine',-120);setTimeout(()=>tone(1110,.5,.03,'sine',-80),170)}, found:()=>{tone(523,.3,.08);setTimeout(()=>tone(784,.45,.08),120)}, ping:()=>tone(1320,.5,.04,'sine',-200),
-    static:()=>noise(.7,.05,1500,4200), click:()=>tone(440,.08,.05,'square'), whoosh:()=>noise(1.8,.16,200,2600), rewind:()=>noise(3.5,.055,3200,260), tick:()=>tone(1500,.04,.03,'square'),
+    static:()=>noise(.7,.05,1500,4200), click:()=>tone(440,.08,.05,'square'), whoosh:()=>noise(1.8,.16,200,2600), rewind:()=>noise(3.5,.055,3200,260), forward:()=>noise(1.5,.043,260,3200), tick:()=>tone(1500,.04,.03,'square'),
     radar(run){radarActive=run;clearInterval(radT); radT=null; if(run&&ctx&&on){const p=()=>{radN++;tone(1180,.55,.028,'sine',-420);setTimeout(()=>tone(2360,.18,.007,'sine'),90)};p();radT=setInterval(p,3600)}}, get radN(){return radN},
     toggle(){on=!on; if(master) master.gain.setTargetAtTime(on?.75:0,ctx.currentTime,.045); this.radar(radarActive); return on}, get on(){return on}};
 })();
@@ -1124,7 +1142,7 @@ const M={
    {tag:'2026',date:'2026',year:2026,title:'Still going',txt:['I carry a golden record: 115 images, greetings in 55 languages, the sounds of Earth and about 90 minutes of music.','In April 2026 NASA switched off one of my instruments to save power. The others keep listening.'],facts:['Voyager 1 is still operating in its extended mission.','Golden Record: 115 images · 55 greetings · 90 minutes of music.']}
   ]}
 };
-const { SCRIPT, playBeats, cinematic: presentCinema, skipCinema, cancelCinema } = AstravumStory;
+const { SCRIPT, playAutomatically, cinematic: presentCinema, skipCinema, cancelCinema } = AstravumStory;
 const cinematic=async(beats,options={})=>{
   const radio=!!options.interference;
   if(radio) audio.hiss(true);
@@ -1348,7 +1366,9 @@ function startTalk(k){
   talkPanel.classList.add('on');
   const relive=$('#hg-relive');
   $('#hg-skip-intro').hidden=false;
-  talkPlayback=playBeats(talkPanel,$('#hg-ls'),SCRIPT.discovery[k],{
+  const skip=$('.story-skip',talkPanel);
+  talkPlayback=playAutomatically($('#hg-ls'),SCRIPT.discovery[k],{
+    skip,
     speaking:audio.duck,
     sound:audio.typer('voice'),
     finish(){
@@ -1357,7 +1377,7 @@ function startTalk(k){
       relive.focus();
     }
   });
-  $('.story-advance',talkPanel).focus();
+  skip.focus();
   $('.story-close',talkPanel).onclick=()=>{
     closeTalk();
     audio.setCue(S.awoke?'restored':'hangar');
@@ -1424,7 +1444,7 @@ function hgFrame(dt){
   for(let i=HG.dust.length-1;i>=0;i--){const d=HG.dust[i];d.x+=d.vx*dt;d.y+=d.vy*dt;d.l-=dt*.55;if(d.l<=0){HG.dust.splice(i,1);continue}x.fillStyle=`rgba(230,240,255,${d.l*.6})`;x.beginPath();x.arc(d.x,d.y,d.s,0,7);x.fill()}
   x.globalCompositeOperation='source-over';
   // dwell detection
-  if(S.busy||S.awakening||HG.talking||!S.hangarIntro)return;
+  if(S.busy||S.awakening||HG.talking||!S.hangarIntro||restorePrompt.open)return;
   const hov=hitObj(HG.hx,HG.hy);
   ORDER.forEach(k=>{ if(hov===k){HG.prog[k]=Math.min(1,HG.prog[k]+dt/.55)} else HG.prog[k]=Math.max(S.found[k]?1:0,HG.prog[k]-dt*.5); if(HG.prog[k]>=1&&!S.found[k]) setFound(k)});
   torch.classList.toggle('hot',!!hov&&(S.found[hov]||HG.prog[hov]>.2));
@@ -1486,7 +1506,7 @@ async function openFocus(k,fromHangar,skipIntro=false){
   SF.classList.remove('rdy','tlm','about'); $('#fg-gl').classList.remove('gone'); focusBackground(k); renderCard();
   $('#fname').textContent='EXHIBIT '+m.num+' · '+m.name+' · '+m.full; $('#fdate').textContent='NOW — 2026';
   fimg.src=m.img; fimg.style.opacity=1; fobj.style.filter='none'; fm3.classList.remove('on'); if(mv) mv.hide(); applyObjSize();
-  $('#fphoto').classList.remove('on');$('#fstory').classList.remove('on');$('#fabout').classList.remove('on');$('#pipe').classList.remove('on');$('#pipe').classList.add('out');$('#b-present').hidden=true;
+  $('#fphoto').classList.remove('on');$('#fstory').classList.remove('on');$('#fabout').classList.remove('on');$('#pipe').classList.remove('on');$('#pipe').classList.add('out');
   $('#b-about').hidden=false;$('#b-time').hidden=false;$('#b-back').hidden=false;updateTaskButton(k);$('#fbtns').classList.add('hide');
   fobjw.style.transition='none';
   if(fromHangar){const st=$('#st-hangar').getBoundingClientRect(),h=m.hotspot,cx=st.left+h.x/BASEW*st.width,cy=st.top+h.y/BASEH*st.height;const sc=(h.w/BASEW*st.width)/objSize().w;fobjw.style.transform=`translate(${cx-innerWidth/2}px,${cy-innerHeight*.47}px) scale(${sc})`;fobjw.style.opacity=0;}
@@ -1576,24 +1596,27 @@ function renderStep(i){
     <h2>${step.title}</h2><h3>${step.date}</h3>
     <div class="memory-line"></div>
     <div class="story-actions">
-      <button class="btn story-advance"></button>
-      <button class="story-skip">Skip typing</button>
-      <button class="btn memory-next" hidden>${i===m.steps.length-1?'Finish memories':'Next memory'}</button>
+      <button class="story-skip">Skip dialogue</button>
+      ${i<m.steps.length-1?'<button class="btn memory-next" type="button" hidden>Next memory</button>':''}
+      <button class="btn memory-return" type="button">Return to 2026</button>
     </div>
     <dl aria-label="Historical facts">${step.facts.map(f=>`<dt>•</dt><dd>${f}</dd>`).join('')}</dl>
   </div></div>`;
-  const advance=$('.story-advance',story),next=$('.memory-next',story);
-  memoryPlayback=playBeats(story,$('.memory-line',story),step.txt,{
+  const skip=$('.story-skip',story),next=$('.memory-next',story),returnButton=$('.memory-return',story);
+  memoryPlayback=playAutomatically($('.memory-line',story),step.txt,{
+    skip,
     speaking:audio.duck,
     sound:audio.typer('memory'),
-    finishOnReveal:true,
     finish(){
-      next.hidden=false;
-      if(document.activeElement===document.body||story.contains(document.activeElement)) next.focus({preventScroll:true});
+      if(next) next.hidden=false;
+      if(document.activeElement===document.body||document.activeElement===skip){
+        (next||returnButton).focus({preventScroll:true});
+      }
     }
   });
-  next.onclick=nextStep;
-  (advance.hidden?next:advance).focus({preventScroll:true});
+  if(next) next.onclick=nextStep;
+  returnButton.onclick=completeArtifactMemory;
+  skip.focus({preventScroll:true});
   story.scrollTop=0;
   fobjw.style.transition='transform 1s cubic-bezier(.2,.8,.2,1)';
   fobjw.style.transform=innerWidth>820?`translate(${side==='sr'?-19:19}vw,0)`:'translate(0,0)';
@@ -1605,28 +1628,79 @@ function goStep(i){
   S.rotT=360*i/M[S.cur].steps.length;
   renderStep(i);
 }
-async function nextStep(){
+function nextStep(){
   const action=$('.memory-next');
   if(S.busy||!S.tl||!action||action.hidden)return;
-  const k=S.cur,m=M[k],next=S.tl.i+1;
-  if(next<m.steps.length){
-    S.tl.furthest=Math.max(S.tl.furthest,next);
-    goStep(next);
-    return;
-  }
+  const next=S.tl.i+1;
+  S.tl.furthest=Math.max(S.tl.furthest,next);
+  goStep(next);
+}
+async function completeArtifactMemory(){
+  if(S.busy||!S.tl||S.tl.i<0||S.scene!=='s-focus')return;
   S.busy=true;
+  const k=S.cur,m=M[k],year=m.steps[S.tl.i].year;
+  const rewind=$('#rew'),bar=$('#rewbar'),progress=$('i',bar);
   memoryPlayback?.stop();
+  memoryPlayback=null;
+  audio.click();
+  audio.setCue(k);
   $('#fstory').classList.remove('on');
+  $('#fphoto').classList.remove('on');
   $('#pipe').classList.remove('on');
-  const skipped=await cinematic([m.quote],{speaker:m.name});
-  audio.found();
-  if(!REDUCE&&!skipped) await flash(800,.28);
-  S.aw[k]=true;
-  $('#fsys').textContent='SYSTEM: MEMORY RESTORED · '+completedCount()+'/'+ORDER.length;
-  await wait(skipped?550:1550);
-  $('#fsys').textContent='';
+  $('#pipe').classList.add('out');
+  $$('.ghost',SF).forEach(ghost=>ghost.remove());
+
+  const travel=JOURNEY=journeyCtl();
+  const effect=REDUCE?null:audio.forward();
+  const rotation=S.rot;
+  const presentRotation=rotation+((S.auto-rotation)%360+540)%360-180;
+  rewind.textContent='▶▶ RETURNING TO 2026';
+  if(!REDUCE){
+    rewind.classList.add('on');
+    bar.classList.add('on');
+    $('#nav-skip').focus({preventScroll:true});
+  }
+  fobjw.style.transition=REDUCE?'none':'transform 1.5s cubic-bezier(.2,.8,.2,1)';
+  fobjw.style.transform='translate(0,0) scale(1)';
+  try{
+    const frame=p=>{
+      const t=ease(p);
+      $('#fdate').textContent=String(Math.round(lerp(year,2026,t)));
+      progress.style.width=(p*100)+'%';
+      setFilters(1-t);
+      warp(.75*(1-t));
+      S.rot=S.rotT=lerp(rotation,presentRotation,t);
+    };
+    if(REDUCE) frame(1);
+    else await travel.tween(1500,frame);
+  }finally{
+    effect?.stop();
+    if(JOURNEY===travel) JOURNEY=null;
+    rewind.classList.remove('on');
+    rewind.textContent='◀◀ REWINDING';
+    bar.classList.remove('on');
+    progress.style.width='0';
+    warp(0);
+  }
+
+  fobjw.style.transition='none';
+  S.tl=null;
+  $('#fdate').textContent='NOW — 2026';
+  SF.classList.remove('tlm');
+  $('#fg-gl').classList.remove('gone');
+  if(!S.aw[k]){
+    S.aw[k]=true;
+    updateHud();
+    const skipped=await cinematic([m.quote],{speaker:m.name});
+    audio.found();
+    $('#fsys').textContent='MEMORY RESTORED · '+m.name+' — '+completedCount()+'/'+ORDER.length;
+    await wait(skipped?550:1350);
+    $('#fsys').textContent='';
+  }
+
+  $('#fbtns').classList.remove('hide');
   S.busy=false;
-  await backToMuseum();
+  $('#b-time').focus({preventScroll:true});
 }
 $('#b-time').onclick=runTimeline;
 
@@ -2092,10 +2166,13 @@ async function ascendToMap(){
   audio.setCue('restored',j.skipped?1:2.6);
   await mapSettle();
 }
-function showEnding(){
+async function showEnding(journey){
+  const title=$('#end-title');
   $('#end-tag').textContent=SCRIPT.farewell[2];
-  $('#end-logo').classList.add('final');
-  $('#end-cred').classList.add('final');
+  title.classList.add('final');
+  await journey.hold(REDUCE?0:1000);
+  title.classList.toggle('instant',journey.skipped);
+  title.inert=false;
   $('#end-again').focus({preventScroll:true});
 }
 /* Map → warp home → the same cockpit, calm → farewell → ASTRAVUM. */
@@ -2105,6 +2182,9 @@ async function returnToShip(){
   const j=JOURNEY=journeyCtl(),app=$('#app'),map=$('#s-map');
   try{
     app.classList.add('journey');
+    const title=$('#end-title');
+    title.classList.remove('final','instant');
+    title.inert=true;
     // A: the map falls away and stars stream past
     S.cueHold=true;audio.setCue('home',2.4);
     if(!REDUCE){starsBack.run=true;starsBack.wt=.5}
@@ -2120,13 +2200,13 @@ async function returnToShip(){
     starsBack.wt=0;
     // C: the farewell, through the narrative overlay
     j.phase();
-    const skipped=await cinematic(SCRIPT.farewell.slice(0,2),{speaker:'SYSTEM: MISSION COMPLETE\nALL MEMORIES PRESERVED',flavor:'narration',veil:'light',hold:2400});
+    const skipped=await cinematic(SCRIPT.farewell.slice(0,2),{speaker:'SYSTEM: MISSION COMPLETE\nALL MEMORIES PRESERVED',flavor:'narration',veil:'light'});
     j.check();
-    // D: a slow fade to black, then the title
+    // D: finish the fade to black before showing any title content.
     j.phase();if(skipped)j.skip();
     showScene('s-end');$('#st-end').style.display='none';
-    await j.hold(1600);
-    showEnding();
+    await j.hold(REDUCE?0:1800);
+    await showEnding(j);
   }finally{
     map.classList.remove('leaving');starsBack.wt=0;S.cueHold=false;app.classList.remove('journey');if(JOURNEY===j)JOURNEY=null;
   }
@@ -2178,7 +2258,7 @@ function revealAll(){
 }
 function navBack(){
   const sc=S.scene;
-  if(JOURNEY||sc==='s-start'||S.awakening||((sc==='s-map'||S.done)&&S.busy))return;
+  if(JOURNEY||(sc==='s-focus'&&S.busy&&!S.tl)||sc==='s-start'||S.awakening||((sc==='s-map'||S.done)&&S.busy))return;
   audio.init();audio.click();
   if($('#task').classList.contains('on')){closeTask(true);return}
   if(sc==='s-cockpit'){
@@ -2191,6 +2271,24 @@ function navBack(){
   else if(sc==='s-focus')goHangar();
   else if(sc==='s-map')goHangar();
 }
+const restorePrompt=$('#restore-prompt');
+function canRestoreMuseum(){
+  return S.scene==='s-hangar'&&S.hangarIntro&&!S.busy&&!S.awakening&&!S.awoke
+    &&!HG.talking&&!JOURNEY&&!$('#cinema').open&&!$('#modal.on,#tasks-list.on,#task.on,#arch.on');
+}
+$('#restore-cancel').onclick=()=>restorePrompt.close();
+$('#restore-confirm').onclick=()=>{
+  if(!restorePrompt.open)return;
+  restorePrompt.close();
+  if(!canRestoreMuseum())return;
+  navHard();
+  for(const k of ORDER){
+    if(!S.aw[k]) S.aw[k]=true;
+    S.found[k]=true;
+    HG.prog[k]=1;
+  }
+  enterHangar();
+};
 function navSkip(){
   audio.init();audio.click();
   if(skipCinema())return;
@@ -2198,7 +2296,7 @@ function navSkip(){
   if(finishRewind){finishRewind();return}
   const sc=S.scene;
   if($('#task').classList.contains('on')){closeTask(true);return}
-  if(S.awakening||S.done||sc==='s-map')return;
+  if(restorePrompt.open||S.awakening||(S.done&&sc!=='s-hangar')||sc==='s-map')return;
   if($('#arch').classList.contains('on'))return;
   if(sc==='s-start'){
     goCockpit();
@@ -2209,8 +2307,8 @@ function navSkip(){
   else if(sc==='s-station')goHangar();
   else if(sc==='s-hangar'&&!S.busy){
     if(HG.talking) talkPlayback?.step();
-    else if(!ORDER.every(k=>S.found[k]))revealAll();
     else if(S.awoke)openMap();
+    else if(canRestoreMuseum())restorePrompt.showModal();
   }
   else if(sc==='s-focus'&&!S.busy){
     if(S.tl) memoryPlayback?.step();

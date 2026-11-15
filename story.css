@@ -149,16 +149,6 @@
 #fstory dl { border-top: 1px solid var(--line); padding-top: .6em; }
 #pipe .sq:disabled { opacity: .45; cursor: default; }
 #s-end #end-space { display: none; }
-#end-logo.final {
-  top: 23%;
-  opacity: 1;
-  transition: opacity .9s ease;
-}
-#end-cred.final {
-  opacity: 1;
-  pointer-events: auto;
-  transition: opacity .9s ease;
-}
 @media (max-width: 820px) {
   #fstory, #fstory.wide {
     top: auto;
@@ -178,7 +168,7 @@
   #hg-talk { padding: 10px 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #cinema, .cinema-content, #hg-talk, #fstory, #end-logo.final, #end-cred.final,
+  #cinema, .cinema-content, #hg-talk, #fstory,
   .adv, #dust { transition: none; }
   #btn-map, #btn-map::before, #btn-map::after { animation: none; }
 }
@@ -309,6 +299,22 @@
 #s-hangar.restored-instantly .adv,
 #s-hangar.restored-instantly #dust { transition: none; }
 /* The scene-level control is only shown where it has an available action. */
+#restore-prompt {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  max-height: 90vh;
+  overflow: auto;
+  width: min(92vw, 420px);
+  padding: 22px 24px;
+  color: var(--ice);
+  text-align: center;
+}
+#restore-prompt::backdrop { background: rgba(0,0,0,.72); }
+#restore-title { margin: 0; font: 700 16px/1.5 var(--mono); letter-spacing: .16em; }
+#restore-description { font: 300 13px/1.6 var(--sans); color: var(--ice2); }
+
 #app:has(#cinema[open], #s-map.on, #s-end.on) #nav-skip,
 #app:has(#s-focus.on):not(:has(#rew.on, #fstory.on .story-skip:not([hidden]), #task.on)) #nav-skip {
   visibility: hidden;
@@ -500,13 +506,86 @@
 
 /* A slow fade to black before the title. */
 #s-end.on { transition: opacity 1.8s ease, visibility 0s; }
-#end-cred .t {
-  min-height: 1.5em;
-  margin: -2px 0 6px;
+#end-title {
+  position: absolute;
+  inset: clamp(6px, 3vh, 24px) 16px max(60px, 8vh);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1.5vh, 14px);
+  text-align: center;
+}
+#end-logo {
+  width: min(290px, 74vw);
+  max-height: clamp(52px, 34vh, 245px);
+  object-fit: contain;
+  flex-shrink: 0;
+  mix-blend-mode: screen;
+}
+#end-cred {
+  display: grid;
+  justify-items: center;
+  gap: clamp(5px, 1.25vh, 12px);
+  width: min(100%, 560px);
+  text-shadow: 0 0 18px rgba(0,0,0,.9);
+}
+#end-cred p, #end-cred h2, #end-cred ul { margin: 0; }
+#end-tag {
   font: italic 300 clamp(15px, 1.7vw, 22px)/1.5 var(--term);
   letter-spacing: .06em;
   color: var(--term-ink);
   text-shadow: var(--term-glow);
+}
+#end-cred h2 {
+  font: 400 clamp(11px, 1.25vw, 16px)/1.4 var(--mono);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ice2);
+}
+#end-cred .end-names {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .45em clamp(12px, 4vw, 40px);
+  padding: 0;
+  list-style: none;
+  color: var(--ice);
+  font: 400 clamp(12px, 1.3vw, 16px)/1.35 var(--mono);
+  letter-spacing: .055em;
+}
+#end-cred .end-event {
+  color: #b6cbe8;
+  font: 300 clamp(12px, 1.45vw, 19px)/1.35 var(--sans);
+  letter-spacing: .1em;
+}
+#end-again { padding: 12px clamp(18px, 4vw, 44px); }
+#end-logo, #end-cred, #end-again { opacity: 0; }
+#end-title.final #end-logo, #end-title.final #end-cred, #end-title.final #end-again {
+  opacity: 1;
+  transition: opacity .65s ease;
+}
+#end-title.final #end-cred { transition-delay: .18s; }
+#end-title.final #end-again { transition-delay: .35s; }
+#end-title.final.instant :is(#end-logo, #end-cred, #end-again) { transition: none; }
+@media (max-height: 420px) {
+  #end-title { inset-block-start: 6px; gap: 5px; }
+  #app:has(#s-end.on) #src-link { left: auto; right: 22px; bottom: 26px; }
+  #end-logo { max-height: 25vh; }
+  #end-cred { gap: 5px; }
+  #end-again { padding-block: 9px; }
+}
+@media (max-height: 290px) {
+  #end-title { inset-block-end: 48px; }
+  #end-logo { max-height: 18vh; }
+  #end-cred { gap: 3px; }
+  #end-tag { font-size: 13px; }
+  #end-again { padding-block: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #s-end.on, #end-title.final #end-logo, #end-title.final #end-cred, #end-title.final #end-again {
+    transition: none;
+  }
 }
 
 /* Skip stays available through every journey phase (the overlay has its own). */
@@ -516,4 +595,21 @@
 
 @media (prefers-reduced-motion: reduce) {
   #s-map.leaving { transform: none; transition: opacity .6s ease !important; }
+}
+
+/* Secondary timeline action uses the existing blue HUD outline. */
+#fstory .story-actions:has(.memory-return) { column-gap: .4rem; }
+#fstory .story-actions :is(.memory-next, .memory-return) {
+  padding-inline: .45em;
+  letter-spacing: .04em;
+}
+#fstory .memory-return {
+  color: var(--ice2);
+  border-color: rgba(143,220,255,.42);
+  background: rgba(6,22,44,.32);
+  box-shadow: none;
+}
+#fstory .memory-return:hover, #fstory .memory-return:focus-visible {
+  color: var(--ice);
+  border-color: var(--cy2);
 }
