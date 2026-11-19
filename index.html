@@ -1458,7 +1458,26 @@ let hgRun=false,mapRun=false;
 const HG={lit:0,litT:0,W:1,H:1,tx:.45,ty:.62,hx:.45,hy:.62,ang:0,dust:[],prog:{eagle:0,opp:0,voy:0},hover:null,inited:false,tip:{x:0,y:0}};
 const BASEW=1672,BASEH=941;
 const torch=$('#torch'),tctx=torch.getContext('2d');
-function hgResize(){const stage=$('#st-hangar');HG.W=stage.clientWidth;HG.H=stage.clientHeight;torch.width=HG.W*DPR;torch.height=HG.H*DPR}
+function portraitHangar(){return matchMedia('(max-width: 820px) and (orientation: portrait)').matches}
+function panHangar(value){
+  const stage=$('#st-hangar'),limit=Math.max(0,(stage.clientWidth-innerWidth)/2);
+  HG.pan=portraitHangar()?clamp(value,-limit,limit):0;
+  stage.style.marginLeft=HG.pan+'px';
+}
+function frameArtifact(k){
+  if(!portraitHangar())return;
+  const stage=$('#st-hangar');
+  panHangar((.5-M[k].hotspot.x/BASEW)*stage.clientWidth);
+}
+function hgResize(){
+  const stage=$('#st-hangar');
+  const bounds=stage.getBoundingClientRect();
+  HG.W=portraitHangar()?stage.clientWidth:bounds.width;
+  HG.H=portraitHangar()?stage.clientHeight:bounds.height;
+  torch.width=HG.W*DPR;torch.height=HG.H*DPR;
+  if(HG.pan===undefined&&portraitHangar())frameArtifact('eagle');
+  else panHangar(HG.pan||0);
+}
 function hangarReset(){ if(!HG.inited){HG.inited=true;buildTags();genDust();dustMask();buildAdv()} hgResize(); closeTalk(); updateHud(); $('#hg-hint').style.opacity=(S.lit3||ORDER.every(k=>S.aw[k]))?0:1; $('#st-hangar').classList.remove('away'); $('#hg-status').textContent=S.awoke?ONLINE_STATUS:'';
   HG.tx=.45;HG.ty=.64;HG.hx=HG.tx;HG.hy=HG.ty; }
 function buildTags(){const box=$('#tags');box.innerHTML='';ORDER.forEach(k=>{const m=M[k],h=m.hotspot;const d=document.createElement('div');d.className='otag';d.id='tag-'+k;d.style.left=(h.x/BASEW*100)+'%';d.style.top=((h.y-h.h*.62)/BASEH*100)+'%';d.innerHTML='<b>EXHIBIT '+m.num+'</b><span>'+m.name+'</span><small>'+m.full+'</small>';box.appendChild(d); const button=document.createElement('button');button.className='btn';button.dataset.exhibit=k;button.textContent=m.name;button.onclick=()=>selectArtifact(k);$('#hg-choice').appendChild(button)})}
@@ -1490,6 +1509,7 @@ function closeTalk(){
 }
 function selectArtifact(k){
   if(S.busy||S.awakening||!S.hangarIntro||HG.talking) return;
+  frameArtifact(k);
   if(S.talked[k]) openFocus(k,true);
   else startTalk(k);
 }
@@ -1536,10 +1556,21 @@ function startTalk(k){
 }
 function hgPoint(e){const r=$('#st-hangar').getBoundingClientRect();return {x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height}}
 function hitObj(nx,ny){const x=nx*BASEW,y=ny*BASEH;for(const k of ORDER){const h=M[k].hotspot;const dx=(x-h.x)/(h.w*.5*.95),dy=(y-h.y)/(h.h*.5*1.05);if(dx*dx+dy*dy<=1) return k}return null}
-torch.addEventListener('pointermove',e=>{const p=hgPoint(e);HG.tx=p.x;HG.ty=p.y;},{passive:true});
+torch.addEventListener('pointermove',e=>{
+  if(HG.panStart&&portraitHangar()){
+    panHangar(HG.panStart.pan+e.clientX-HG.panStart.x);
+  }
+  const p=hgPoint(e);HG.tx=p.x;HG.ty=p.y;
+},{passive:true});
+const endHangarPan=()=>{HG.panStart=null};
+torch.addEventListener('pointerup',endHangarPan);
+torch.addEventListener('pointercancel',endHangarPan);
 torch.addEventListener('pointerdown',e=>{
-  torch.setPointerCapture(e.pointerId);
   if(S.busy||S.awakening||!S.hangarIntro||HG.talking)return;
+  if(e.pointerType==='touch'&&portraitHangar()){
+    HG.panStart={x:e.clientX,pan:HG.pan||0};
+    torch.setPointerCapture(e.pointerId);
+  }
   const p=hgPoint(e);HG.tx=p.x;HG.ty=p.y;
   const k=hitObj(p.x,p.y);
   if(k&&(S.found[k]||HG.prog[k]>.2)){
@@ -1610,11 +1641,8 @@ Object.assign(M.opp,{bg:'img/bg_mars.jpg',ct:'OPPORTUNITY',sub:'MARS EXPLORATION
 Object.assign(M.voy,{bg:'img/bg_space.jpg',ct:'VOYAGER 1',sub:'INTERSTELLAR PROBE',span:'1977 – PRESENT',glbParts:['glb/voyager.b64.txt'],
  card:[['rocket','LAUNCH DATE','05 SEP 1977'],['planet','CURRENT LOCATION','INTERSTELLAR SPACE<br><small style="display:inline;font-size:11px">(BEYOND THE HELIOSPHERE)</small>'],['wifi','DISTANCE FROM EARTH','MORE THAN 25 BILLION KM'],['gauge','SPEED','≈ 17 KM/S'],['layers','STATUS','ACTIVE<br><small style="display:inline;font-size:11px">(OPERATING SINCE 1977)</small>']]});
 
-function objSize(){
-  const mobile=matchMedia('(max-width: 820px), (max-height: 500px) and (pointer: coarse)').matches;
-  return {w:mobile?Math.min(innerWidth*.7,innerHeight*.37*1.6):Math.min(innerWidth*.38,innerHeight*.46*1.6)};
-}
-function applyObjSize(){const m=M[S.cur];if(!m)return;const {w}=objSize();fimg.style.width=w+'px';const ar=m.id==='eagle'?2.114:m.id==='opp'?1.587:1.621;const bw=Math.min(w*1.5,innerWidth*(innerWidth<=820?.92:.6)),bh=Math.min(innerHeight*(innerWidth<=820?.32:.66),bw*.72);fm3.style.width=bw+'px';fm3.style.height=bh+'px'; if(mv) mv.resize()}
+function objSize(){return {w:Math.min(innerWidth*.38,innerHeight*.46*1.6)}}
+function applyObjSize(){const m=M[S.cur];if(!m)return;const {w}=objSize();fimg.style.width=w+'px';const ar=m.id==='eagle'?2.114:m.id==='opp'?1.587:1.621;const bw=Math.min(w*1.5,innerWidth*.6),bh=Math.min(innerHeight*.66,bw*.72);fm3.style.width=bw+'px';fm3.style.height=bh+'px'; if(mv) mv.resize()}
 function focusBackground(k){
   const m=M[k]; const im=$('#fbgimg'); im.src=m.bg;
   $('#stars3').style.setProperty('--h',k==='eagle'?.5:k==='opp'?.53:1.3); $('#fhaze').classList.toggle('on',k==='opp');
@@ -1858,17 +1886,7 @@ const BELT=[...Array(280)].map((_,i)=>({r:.545+Math.random()*.045,a:(Math.random
 let mapT=0;const mapMarks=[];
 function bez(p0,p1,p2,p3,t){const u=1-t;return {x:u*u*u*p0.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*p3.x,y:u*u*u*p0.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*p3.y}}
 function buildLabels(){const box=$('#plabels');box.innerHTML='';[...PLN.map(p=>p.n),'Moon','Asteroid Belt'].forEach(n=>{const d=document.createElement('div');d.className='plab';d.id='pl-'+n.replace(/\s/g,'');d.textContent=n;box.appendChild(d)})}
-function setLab(n,x,y){
-  const label=$('#pl-'+n.replace(/\s/g,''));
-  if(!label)return;
-  if(MW<=820){
-    x=clamp(x,label.offsetWidth/2+4,MW-label.offsetWidth/2-4);
-    const i=PLN.findIndex(planet=>planet.n===n);
-    if(i>=0)y=MH*.5-30+(i%3)*26;
-    else if(n==='Moon')y=MH*.5+62;
-  }
-  label.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;
-}
+function setLab(n,x,y){const d=$('#pl-'+n.replace(/\s/g,''));if(d)d.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`}
 function mapStatus(){const all=ORDER.every(k=>S.aw[k]);$('#mtitle-p').textContent=all?'The museum is awake · three machines remembered':'The final expedition map';ORDER.forEach(k=>{const e=$('#ml-'+k);if(e)e.textContent=S.aw[k]?'✓':''})}
 async function openMap(){
   if(S.busy||!S.awoke)return;
@@ -1937,7 +1955,7 @@ function mapFrame(dt){
   const pr=(Math.sin(t*3)+1)/2;mo.fillStyle='#fff';mo.shadowColor='#5ad6ff';mo.shadowBlur=14;mo.beginPath();mo.arc(vdot.x,vdot.y,5,0,7);mo.fill();mo.shadowBlur=0;mo.strokeStyle='rgba(120,220,255,.7)';mo.lineWidth=1.3;mo.beginPath();mo.arc(vdot.x,vdot.y,9+pr*7,0,7);mo.stroke();
   // leader lines from cards
   mo.strokeStyle='rgba(225,242,255,.8)';mo.lineWidth=1;
-  const lead=(id,tx,ty)=>{if(!$(id).offsetParent)return;const r=$(id).getBoundingClientRect();const x0=clamp(tx,r.left+24,r.right-24),y0=r.bottom;mo.beginPath();mo.moveTo(x0,y0);mo.lineTo(tx,ty);mo.stroke();mo.fillStyle='#fff';mo.beginPath();mo.arc(tx,ty,3,0,7);mo.fill()};
+  const lead=(id,tx,ty)=>{const r=$(id).getBoundingClientRect();const x0=clamp(tx,r.left+24,r.right-24),y0=r.bottom;mo.beginPath();mo.moveTo(x0,y0);mo.lineTo(tx,ty);mo.stroke();mo.fillStyle='#fff';mo.beginPath();mo.arc(tx,ty,3,0,7);mo.fill()};
   if(!$('#s-map').classList.contains('arriving')){lead('#mc-eagle',Mo.x,Mo.y-Mo.r);lead('#mc-opp',Ma.x,Ma.y-Ma.r);lead('#mc-voy',vdot.x,vdot.y-6)}
   mapMarks.length=0;mapMarks.push({k:'eagle',x:Mo.x,y:Mo.y,r:Mo.r+6},{k:'opp',x:Ma.x,y:Ma.y,r:Ma.r},{k:'voy',x:vdot.x,y:vdot.y,r:14});
   if(pvMap) pvMap.frame(dt);
@@ -1956,7 +1974,7 @@ $('#src-link').onclick=()=>$('#modal').classList.add('on');$('#modal-x').onclick
 function fitStage(){const a=$('#app').getBoundingClientRect(),w=a.width,h=a.height,sw=Math.max(w,h*16/9)*1.03,sh=Math.max(w*9/16,h)*1.03;document.documentElement.style.setProperty('--SW',sw+'px');document.documentElement.style.setProperty('--SH',sh+'px')}
 fitStage();
 if((navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4) setTimeout(()=>{if(!LITE)setLite()},0);
-addEventListener('resize',()=>{fitStage();genSpace();starsBack.resize();starsFront.resize();starsFocus.resize();starsStation.resize();pvStart.resize();pvFocus.resize();hgResize();mapResize();applyObjSize();if($('#task').classList.contains('eg'))egDraw()});
+addEventListener('resize',()=>{fitStage();genSpace();starsBack.resize();starsFront.resize();starsFocus.resize();starsStation.resize();pvStart.resize();pvFocus.resize();hgResize();mapResize();applyObjSize()});
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('#modal').classList.remove('on');if($('#fabout').classList.contains('on'))toggleAbout(false)}});
 
 /* ============ LOOP ============ */
@@ -2108,7 +2126,6 @@ function egInit(done){ EG.sel=null;EG.drag=null;EG.on=false;EG.tk++; $('#eg-land
   const check=async()=>{ if(EG.on||egCount()<4)return; EG.on=true; egUpdate(); $('#eg-lander').classList.add('lit'); audio.found(); await egMsg('SYSTEM: POWER GRID RESTORED',1); done() };
   const wire=()=>{ $$('.eg-node').forEach(n=>{
     n.onpointerdown=e=>{ if(EG.on)return; e.preventDefault(); EG.drag={el:n,sx:e.clientX,sy:e.clientY,moved:false}; n.setPointerCapture&&n.setPointerCapture(e.pointerId) };
-    n.onpointercancel=()=>{EG.drag=null;n.style.transform='';n.classList.remove('drag')};
     n.onpointermove=e=>{ const D=EG.drag; if(!D||D.el!==n)return; const dx=e.clientX-D.sx,dy=e.clientY-D.sy; if(!D.moved&&Math.hypot(dx,dy)<7)return; D.moved=true; n.classList.add('drag'); n.style.transform=`translate(${dx}px,${dy}px) scale(1.06)` };
     n.onpointerup=e=>{ const D=EG.drag; if(!D||D.el!==n)return; EG.drag=null; n.style.transform=''; n.classList.remove('drag');
       if(D.moved){ const t=$$('.eg-node').find(o=>{ if(o===n)return false; const r=o.getBoundingClientRect(); return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom }); EG.sel=null; if(t)swap(n.dataset.n,t.dataset.n); else render() }
@@ -2164,7 +2181,6 @@ function opInit(done,tk){
   pan.onpointerleave=()=>{ret.style.opacity=0};
   pan.onpointerdown=e=>{ if(ok)return; down=true;last=null; pan.setPointerCapture(e.pointerId); wipe(e) };
   pan.onpointerup=()=>{ down=false;last=null; measure() };
-  pan.onpointercancel=()=>{down=false;last=null};
   $('#op-reset').onclick=()=>{ if(ok&&!TK.review)return; audio.click(); ok=false; $('#op-hero').classList.remove('lit'); msg.textContent=''; paint(); pct=0; prog() };
   $('#op-go').onclick=async()=>{ if(ok)return; audio.click(); if(prog()<3){ tkMsg(msg,'Keep wiping — dust is still on the panels.',0); return }
     ok=true; d.clearRect(0,0,W,H); $('#op-hero').classList.add('lit'); ret.style.opacity=0; audio.found(); await tkMsg(msg,'SYSTEM: SOLAR PANELS RESTORED',1); done() };
@@ -2213,7 +2229,6 @@ function closeTask(restoreFocus=false){
 }
 let taskTk=0; const TK={review:false};
 function openTask(k,rv){ if(S.task[k]&&!rv)return; TK.review=!!rv; $('#task').classList.toggle('rv',!!rv); audio.click(); const T=TASKS[k]; taskTk++; const tk=taskTk; $('#task-k').textContent='TASK · '+M[k].name; $('#task-h').textContent=T.h; $('#task-p').textContent=T.p; $('#task-ok').textContent=''; const g=$('#task-game'); g.innerHTML=''; $('#task').classList.add('on');
-  $$('.tkx').forEach(panel=>panel.scrollTop=0);
   const done=()=>{ if(TK.review||tk!==taskTk||S.task[k])return; taskDone(k) };
   if(k==='eagle'){ $('#task').classList.add('eg'); egInit(done) }
   else if(k==='opp'){ $('#task').classList.add('op'); requestAnimationFrame(()=>opInit(done,tk)) }
