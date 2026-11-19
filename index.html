@@ -803,6 +803,11 @@ const REDUCED=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const audio=(()=>{
   let ctx=null,master=null,score,on=true,radT=null,radN=0,radarActive=false,cue='ambient',ducked=false;
   let unlocked=false;
+  const audioErrors=[];
+  function reportAudioError(stage,error){
+    audioErrors.push({stage,message:error?.message||String(error),time:new Date().toISOString()});
+    if(audioErrors.length>12) audioErrors.shift();
+  }
   function updateControls(){
     const playing=on&&ctx?.state==='running';
     for(const button of [$('#mute'),$('#cinema-mute')]){
@@ -815,8 +820,8 @@ const audio=(()=>{
     if(!ctx||ctx.state==='closed'||document.hidden)return;
     try{
       // Called synchronously by init() in the gesture handler.
-      if(ctx.state!=='running') ctx.resume().then(updateControls,updateControls);
-    }catch(e){updateControls()}
+      if(ctx.state!=='running') ctx.resume().then(updateControls,error=>{reportAudioError('resume',error);updateControls()});
+    }catch(e){reportAudioError('resume',e);updateControls()}
   }
   function init(){
     if(!ctx){
@@ -825,7 +830,7 @@ const audio=(()=>{
         master=ctx.createGain();
         master.gain.value=on?.75:0;
         master.connect(ctx.destination);
-        score=AstravumScore.create(ctx, master);
+        score=AstravumScore.create(ctx, master,reportAudioError);
         score.set(cue);
         score.duck(ducked);
         // Typing feedback has its own bus and volume, separate from the score.
@@ -839,6 +844,7 @@ const audio=(()=>{
           if(document.hidden&&ctx.state==='running') ctx.suspend().catch(()=>{});
         };
       }catch(e){
+        reportAudioError('initialization',e);
         // Keep a partially initialized context silent and permit a later retry.
         score?.set(null,0);
         if(ctx) ctx.close().catch(()=>{});
@@ -855,7 +861,7 @@ const audio=(()=>{
         source.onended=()=>source.disconnect();
         source.start(0);
         unlocked=true;
-      }catch(e){unlocked=false}
+      }catch(e){reportAudioError('unlock buffer',e);unlocked=false}
     }
     updateControls();
   }
@@ -942,7 +948,17 @@ const audio=(()=>{
   document.addEventListener('touchend',activate,{capture:true,passive:true});
   document.addEventListener('keydown',activate,{capture:true});
   updateControls();
-  return {init, setCue, duck, typer, hiss, typeStop, swell:seconds=>score?.swell(seconds), get score(){return score}, get context(){return ctx},
+  function diagnosticSnapshot(){
+    return {
+      context:ctx?.state||'not created',muted:!on,unlocked,
+      masterGain:master?.gain.value??null,audioTime:ctx?.currentTime??null,
+      sampleRate:ctx?.sampleRate??null,outputChannels:ctx?.destination.channelCount??null,
+      session:navigator.audioSession?{type:navigator.audioSession.type,state:navigator.audioSession.state}:null,
+      score:score?.diagnostics??null,errors:audioErrors.slice()
+    };
+  }
+  function diagnosticOutput(){return {context:ctx,master,score}}
+  return {init, setCue, duck, typer, hiss, typeStop, diagnosticSnapshot, diagnosticOutput, swell:seconds=>score?.swell(seconds), get score(){return score}, get context(){return ctx},
     blip:()=>tone(880,.18,.07,'sine'), ting:()=>{tone(1480,.55,.045,'sine',-120);setTimeout(()=>tone(1110,.5,.03,'sine',-80),170)}, found:()=>{tone(523,.3,.08);setTimeout(()=>tone(784,.45,.08),120)}, ping:()=>tone(1320,.5,.04,'sine',-200),
     static:()=>noise(.7,.05,1500,4200), click:()=>tone(440,.08,.05,'square'), whoosh:()=>noise(1.8,.16,200,2600), rewind:()=>noise(3.5,.055,3200,260), forward:()=>noise(1.5,.043,260,3200), tick:()=>tone(1500,.04,.03,'square'),
     radar(run){radarActive=run;clearInterval(radT); radT=null; if(run&&ctx&&on){const p=()=>{radN++;tone(1180,.55,.028,'sine',-420);setTimeout(()=>tone(2360,.18,.007,'sine'),90)};p();radT=setInterval(p,3600)}}, get radN(){return radN},
@@ -2372,5 +2388,12 @@ $('#nav-skip').onclick=navSkip;
 window.__astra={openTask,EG,navBack,navSkip,audio,S,M,setDust,startTalk,hangarIntro,setLite,go:(id)=>{showScene(id)},openFocus,startToCockpit,openMap,hangarReset,runTimeline,nextStep,toggleAbout,starsBack,get HG(){return HG},cockpitReset,setAw:(a)=>{ORDER.forEach(k=>S.aw[k]=a);updateHud()},setFound:()=>{ORDER.forEach(k=>{S.found[k]=true;HG.prog[k]=1});updateHud()}};
 boot();
 })();
+</script>
+<script>
+if(new URLSearchParams(location.search).get('audioDebug')==='1'){
+  const diagnosticScript=document.createElement('script');
+  diagnosticScript.src='audio-diagnostic.js';
+  document.body.appendChild(diagnosticScript);
+}
 </script>
 </body></html>

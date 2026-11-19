@@ -23,7 +23,7 @@ const AstravumScore = (() => {
   };
   const hz = note => 440 * 2 ** ((note - 69) / 12);
 
-  function create(ctx, output) {
+  function create(ctx, output, reportError = ()=>{}) {
     const bus = ctx.createGain();
     bus.connect(output);
     let current, ducked = false;
@@ -122,7 +122,7 @@ const AstravumScore = (() => {
         const now = ctx.currentTime;
         if(now > next) next = now + .03;
         if(next - now > .23) return;
-        chord(index++, next);
+        try{chord(index++, next)}catch(error){reportError('soundtrack scheduler',error)}
         next += cue.period;
       }, 140);
       ramp(track.gain.gain, cue.volume, duration);
@@ -147,7 +147,14 @@ const AstravumScore = (() => {
       ducked = value;
       ramp(bus.gain, value ? .48 : 1, value ? .25 : .85);
     }
-    return { set, swell, duck, get cue(){return current?.name || null}, get ducked(){return ducked} };
+    function diagnosticMeter(analyser){
+      bus.connect(analyser);
+      return ()=>bus.disconnect(analyser);
+    }
+    return { set, swell, duck, diagnosticMeter,
+      get diagnostics(){return {cue:current?.name||null,busGain:bus.gain.value,
+        trackGain:current?.gain.gain.value??null,activeNotes:current?.notes.size??0,tracks:voices.size}},
+      get cue(){return current?.name || null}, get ducked(){return ducked} };
   }
   return { create };
 })();
