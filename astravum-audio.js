@@ -75,6 +75,7 @@ const AstravumScore = (() => {
       ramp(track.gain.gain, 0, duration);
       const silenceAt = ctx.currentTime + duration;
       const release = () => {
+        if(!voices.has(track))return;
         if(ctx.state === 'running' && ctx.currentTime < silenceAt) {
           setTimeout(release, 120);
           return;
@@ -147,11 +148,25 @@ const AstravumScore = (() => {
       ducked = value;
       ramp(bus.gain, value ? .48 : 1, value ? .25 : .85);
     }
+    function dispose(){
+      for(const track of voices){
+        clearInterval(track.clock);
+        for(const osc of track.notes){
+          try{osc.stop()}catch{}
+        }
+        track.stereo?.disconnect();
+        track.filter.disconnect();
+        track.gain.disconnect();
+      }
+      voices.clear();
+      current=null;
+      bus.disconnect();
+    }
     function diagnosticMeter(analyser){
       bus.connect(analyser);
       return ()=>bus.disconnect(analyser);
     }
-    return { set, swell, duck, diagnosticMeter,
+    return { set, swell, duck, dispose, diagnosticMeter,
       get diagnostics(){return {cue:current?.name||null,busGain:bus.gain.value,
         trackGain:current?.gain.gain.value??null,activeNotes:current?.notes.size??0,tracks:voices.size}},
       get cue(){return current?.name || null}, get ducked(){return ducked} };
