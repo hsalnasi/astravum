@@ -118,6 +118,7 @@ const AstravumScore = (() => {
       let index = 1, next = ctx.currentTime + cue.period;
       chord(0, ctx.currentTime + .02);
       track.clock = setInterval(() => {
+        if(ctx.state!=='running') return;
         const now = ctx.currentTime;
         if(now > next) next = now + .03;
         if(next - now > .23) return;
